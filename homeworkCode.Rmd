@@ -1,0 +1,120 @@
+---
+title: "HW2"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+# Previous steps
+
+1.  Create GitHub repo for this homework.
+2.  Clone the repo locally.
+3.  Prepare your code for the homework on that repo.
+4.  Download the file "hollywood.graphml"
+5.  You can open the file locally using.
+
+```{r}
+set.seed(1111)
+rm(list = ls())
+library(igraph)
+
+dataGitLink='https://github.com/DACSS-CSSmeths-summer/datafiles/raw/main/hollywood.graphml'
+actors=read_graph(dataGitLink,format='graphml')
+```
+
+As you see, you have:
+
+```{r}
+summary(actors)
+```
+
+From above:
+
+- The graph "actors" is an undirected network of actors.
+```{r}
+V(actors)
+```
+- The actor node has an attribute _wonOscar_, if they won an oscar in acting.
+```{r}
+V(actors)$wonOscar # 0 means NO, 1 yes.
+```
+Maybe better if we relabel
+```{r}
+V(actors)$wonOscar=ifelse(V(actors)$wonOscar==1,'Yes','No')
+```
+
+- There is an edge between two actors are connected if they have ever acted in the same film. 
+```{r}
+E(actors)
+```
+
+
+- The network is **weighted** (edge attribute), that is, the link/edge informs how many times they have been together in a film.
+```{r}
+E(actors)$weight # most actors worked together once.
+```
+
+You can see the network here:
+
+```{r, message=FALSE,warning=FALSE}
+library(ggraph)
+ggraph(graph = actors) + 
+  geom_edge_link() + 
+  geom_node_point()
+```
+
+You add the weights as labels and edge width:
+
+```{r, message=FALSE,warning=FALSE}
+ggraph(graph = actors) + 
+  geom_edge_link(aes(label = weight,
+                     edge_width =  weight),
+                 color='grey70' ) + 
+  geom_node_point() 
+```
+
+You modify the theme:
+
+```{r, message=FALSE,warning=FALSE}
+ggraph(graph = actors) + 
+  geom_edge_link(aes(label = weight ),
+                 color='grey70' ) + 
+  geom_node_point() + theme_graph() +
+  geom_node_text(
+    aes(label = name))
+```
+
+This could be a final version:
+```{r, message=FALSE,warning=FALSE, fig.width=10, fig.height=6}
+finalGraph=ggraph(graph = actors) + 
+  geom_edge_link(aes(edge_width = as.ordered(weight) ),
+                 color='grey70' ) + 
+  geom_node_point() + theme_graph() +
+  geom_node_text(aes(label = name,color = as.factor(wonOscar)),
+                 size=5)
+
+## here the final version
+finalGraph
+```
+
+Maybe better?
+
+```{r, warning=FALSE}
+
+## here the final version
+finalGraph + labs(edge_width="Movies in commmon",
+                  color="Won Oscar as actor") 
+
+```
+
+
+# TO DO
+
+1.  Read from YOUR OWN GitHub (cloud): **dataGitLink** above should point to your repo (not mine)
+2.  Compute node central measures: eigen_centrality, closeness, betweenness.
+3.  Prepare a correlation plot with previous measures, and **comment** the result.
+4.  Redo the plot `finalGraph`, just showing the Hub nodes.
+5.  Answer: Is it possible communities are present? Support your answer with computations.
+6.  IF the presence of communities is possible, compute the communities using `Girvan-Newman` (aka edge_betweenness), and `Louvain` algorithms, or other algorithms. Plot only the best result.
+
