@@ -1,0 +1,665 @@
+---
+title: "HW2"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+# Previous steps
+
+1.  Create GitHub repo for this homework.
+2.  Clone the repo locally.
+3.  Prepare your code for the homework on that repo.
+4.  Download the file "hollywood.graphml"
+5.  You can open the file locally using.
+
+```{r}
+set.seed(1111)
+rm(list = ls())
+library(igraph)
+
+dataGitLink='https://raw.githubusercontent.com/hoellers-umass-amherst/DACSS_690C_HOMEWORK_2_ZEESHAN_MAHMOOD/refs/heads/main/hollywood.graphml'
+
+actors=read_graph(dataGitLink,format='graphml')
+```
+
+As you see, you have:
+
+```{r}
+summary(actors)
+```
+
+From above:
+
+- The graph "actors" is an undirected network of actors.
+```{r}
+V(actors)
+```
+- The actor node has an attribute _wonOscar_, if they won an oscar in acting.
+```{r}
+V(actors)$wonOscar # 0 means NO, 1 yes.
+```
+Maybe better if we relabel
+```{r}
+V(actors)$wonOscar=ifelse(V(actors)$wonOscar==1,'Yes','No')
+```
+
+- There is an edge between two actors are connected if they have ever acted in the same film. 
+```{r}
+E(actors)
+```
+
+
+- The network is **weighted** (edge attribute), that is, the link/edge informs how many times they have been together in a film.
+```{r}
+E(actors)$weight # most actors worked together once.
+```
+
+You can see the network here:
+
+```{r, message=FALSE,warning=FALSE}
+library(ggraph)
+ggraph(graph = actors) + 
+  geom_edge_link() + 
+  geom_node_point()
+```
+
+You add the weights as labels and edge width:
+
+```{r, message=FALSE,warning=FALSE}
+ggraph(graph = actors) + 
+  geom_edge_link(aes(label = weight,
+                     edge_width =  weight),
+                 color='grey70' ) + 
+  geom_node_point() 
+```
+
+You modify the theme:
+
+```{r, message=FALSE,warning=FALSE}
+ggraph(graph = actors) + 
+  geom_edge_link(aes(label = weight ),
+                 color='grey70' ) + 
+  geom_node_point() + theme_graph() +
+  geom_node_text(
+    aes(label = name))
+```
+
+This could be a final version:
+```{r, message=FALSE,warning=FALSE, fig.width=10, fig.height=6}
+finalGraph=ggraph(graph = actors) + 
+  geom_edge_link(aes(edge_width = as.ordered(weight) ),
+                 color='grey70' ) + 
+  geom_node_point() + theme_graph() +
+  geom_node_text(aes(label = name,color = as.factor(wonOscar)),
+                 size=5)
+
+## here the final version
+finalGraph
+```
+
+Maybe better?
+
+```{r, warning=FALSE}
+
+## here the final version
+finalGraph + labs(edge_width="Movies in commmon",
+                  color="Won Oscar as actor") 
+
+```
+
+
+
+
+# TO DO
+
+1.  Read from YOUR OWN GitHub (cloud): **dataGitLink** above should point to your repo (not mine)
+2.  Compute node central measures: eigen_centrality, closeness, betweenness.
+
+#Node Centrality Measures:
+```{r}
+eigen <- eigen_centrality(
+  actors,
+  directed = FALSE,
+  weights = NA
+)$vector
+
+close <- closeness(
+  actors,
+  normalized = TRUE,
+  weights = NA
+)
+
+betw <- betweenness(
+  actors,
+  directed = FALSE,
+  normalized = TRUE,
+  weights = NA
+)
+
+#Combining the measures.
+DFCentrality <- data.frame(
+  Actor = names(eigen),
+  Eigenvector = as.numeric(eigen),
+  Closeness = as.numeric(close),
+  Betweenness = as.numeric(betw),
+  row.names = NULL
+)
+
+DFCentrality
+#In this graph, a larger edge weight means that two actors worked together in more movies. That represents a stronger connection, not a longer distance.
+
+#Functions such as closeness() and betweenness() normally treat larger weights as longer travel distances. Therefore, using the movie-count weights directly would give them the opposite interpretation.
+```
+3.  Prepare a correlation plot with previous measures, and **comment** the result.
+
+#Correlation Plot to inspect centrality across measures:
+
+
+4.  Redo the plot `finalGraph`, just showing the Hub nodes.
+5.  Answer: Is it possible communities are present? Support your answer with computations.
+6.  IF the presence of communities is possible, compute the communities using `Girvan-Newman` (aka edge_betweenness), and `Louvain` algorithms, or other algorithms. Plot only the best result.
+
+```{r}
+# Set the random seed so graph layouts and simulations can be reproduced.
+set.seed(1111)
+
+# Remove all existing objects from the R environment.
+rm(list = ls())
+
+# Load igraph for creating and analyzing networks.
+library(igraph)
+
+# Load ggraph for visualizing networks.
+library(ggraph)
+
+# Load ggplot2 for creating the centrality relationship plot.
+library(ggplot2)
+
+# Store the raw GraphML link from your own GitHub repository.
+dataGitLink <- "https://raw.githubusercontent.com/hoellers-umass-amherst/DACSS_690C_HOMEWORK_2_ZEESHAN_MAHMOOD/refs/heads/main/hollywood.graphml"
+
+# Read the GraphML file directly from your GitHub repository.
+actors <- read_graph(dataGitLink, format = "graphml")
+
+# Display a summary of the Hollywood actor network.
+summary(actors)
+
+# Display the actors represented by the network nodes.
+V(actors)
+
+# Display the connections represented by the network edges.
+E(actors)
+
+# Display the original Oscar-winning attribute for each actor.
+V(actors)$wonOscar
+
+# Relabel the Oscar attribute from zero and one to No and Yes.
+V(actors)$wonOscar <- ifelse(V(actors)$wonOscar == 1, "Yes", "No")
+
+# Display the relabeled Oscar-winning attribute.
+V(actors)$wonOscar
+
+# Display the number of movies represented by each edge weight.
+E(actors)$weight
+
+# Create the original network graph used as the basis for Question 4.
+finalGraph <- ggraph(graph = actors) +
+  # Draw the edges and vary their widths according to movie count.
+  geom_edge_link(
+    aes(edge_width = as.ordered(weight)),
+    color = "grey70"
+  ) +
+  # Draw one point for every actor.
+  geom_node_point() +
+  # Apply a network-focused graph theme.
+  theme_graph() +
+  # Display every actor's name and color it by Oscar status.
+  geom_node_text(
+    aes(
+      label = name,
+      color = as.factor(wonOscar)
+    ),
+    size = 5
+  ) +
+  # Add understandable titles to the graph legends.
+  labs(
+    edge_width = "Movies in common",
+    color = "Won Oscar as actor"
+  )
+
+# Display the original actor network graph.
+finalGraph
+```
+
+```{r, question 2}
+# Calculate eigenvector centrality for every actor.
+eigen <- eigen_centrality(
+  actors,
+  directed = FALSE,
+  weights = NA
+)$vector
+
+# Calculate normalized closeness centrality for every actor.
+close <- closeness(
+  actors,
+  normalized = TRUE,
+  weights = NA
+)
+
+# Calculate normalized betweenness centrality for every actor.
+betw <- betweenness(
+  actors,
+  directed = FALSE,
+  normalized = TRUE,
+  weights = NA
+)
+
+# Combine the three centrality measures into one data frame.
+DFCentrality <- data.frame(
+  Actor = names(eigen),
+  Eigenvector = as.numeric(eigen),
+  Closeness = as.numeric(close),
+  Betweenness = as.numeric(betw),
+  row.names = NULL
+)
+
+# Display the complete centrality table.
+DFCentrality
+
+# Arrange the actors from highest to lowest eigenvector centrality.
+CentralityRanked <- DFCentrality[
+  order(-DFCentrality$Eigenvector),
+]
+
+# Display the actors ranked by eigenvector centrality.
+CentralityRanked
+```
+
+```{r, Question 3}
+# Select only the three numerical centrality columns.
+centralityMeasures <- DFCentrality[
+  ,
+  c(
+    "Eigenvector",
+    "Closeness",
+    "Betweenness"
+  )
+]
+
+# Calculate the correlations among the three centrality measures.
+centralityCor <- cor(centralityMeasures)
+
+# Round the correlation coefficients to three decimal places.
+centralityCorRounded <- round(centralityCor, 3)
+
+# Display the rounded correlation matrix.
+centralityCorRounded
+
+# Create a plot comparing betweenness and closeness centrality.
+centralityPlot <- ggplot(
+  DFCentrality,
+  aes(
+    x = Betweenness,
+    y = Closeness
+  )
+) +
+  # Draw one point for each actor and size it by eigenvector centrality.
+  geom_point(
+    aes(size = Eigenvector),
+    alpha = 0.6
+  ) +
+  # Add the actor names beside their corresponding points.
+  geom_text(
+    aes(label = Actor),
+    check_overlap = TRUE,
+    vjust = -0.7
+  ) +
+  # Apply a clean plot theme.
+  theme_classic() +
+  # Add a title, axis labels, and a size legend title.
+  labs(
+    title = "Relationship among actor centrality measures",
+    x = "Betweenness centrality",
+    y = "Closeness centrality",
+    size = "Eigenvector centrality"
+  )
+
+# Display the centrality relationship plot.
+centralityPlot
+```
+The strongest correlation is between eigenvector centrality and closeness centrality, with a correlation coefficient of 0.836. The weakest correlation is between eigenvector centrality and betweenness centrality, with a correlation coefficient of 0.348. The plot indicates that actors with higher closeness centrality generally tend to have higher eigenvector centrality. Robin Williams appears unusual because he has relatively high betweenness centrality but comparatively low closeness and eigenvector centrality.
+
+
+
+```{r,Question 4}
+# Select the two actors with the highest eigenvector centrality.
+HubNodes <- head(
+  CentralityRanked$Actor,
+  2
+)
+
+# Display the names of the selected hub actors.
+HubNodes
+
+# Create labels that contain names only for the selected hub actors.
+V(actors)$hubLabel <- ifelse(
+  V(actors)$name %in% HubNodes,
+  V(actors)$name,
+  ""
+)
+
+# Display each actor and the hub label assigned to that actor.
+data.frame(
+  Actor = V(actors)$name,
+  HubLabel = V(actors)$hubLabel
+)
+
+# Reset the seed so the graph layout can be reproduced.
+set.seed(1111)
+
+# Re-create the network while labeling only the hub actors.
+hubGraph <- ggraph(graph = actors) +
+  # Draw weighted edges using movie counts as edge-width categories.
+  geom_edge_link(
+    aes(edge_width = as.ordered(weight)),
+    color = "grey70"
+  ) +
+  # Draw every actor as a node and color the node by Oscar status.
+  geom_node_point(
+    aes(color = as.factor(wonOscar)),
+    size = 4
+  ) +
+  # Display names only for the actors identified as hubs.
+  geom_node_text(
+    aes(
+      label = hubLabel,
+      color = as.factor(wonOscar)
+    ),
+    size = 5,
+    repel = TRUE
+  ) +
+  # Apply the network-focused graph theme.
+  theme_graph() +
+  # Add descriptive titles to the graph legends.
+  labs(
+    edge_width = "Movies in common",
+    color = "Won Oscar as actor"
+  )
+
+# Display the network with only the hub actors labeled.
+hubGraph
+```
+
+```{r, Question 5}
+# Calculate the global transitivity of the observed actor network.
+empirical_transitivity <- transitivity(
+  actors,
+  type = "global"
+)
+
+# Display the observed network's transitivity.
+empirical_transitivity
+
+# Reset the seed so the random-network simulation can be reproduced.
+set.seed(1111)
+
+# Set the number of randomized networks to generate.
+replicates <- 1000
+
+# Generate randomized networks and save their global transitivity values.
+random_transitivities <- replicate(
+  replicates,
+  {
+    # Rewire the actor network while preserving its degree sequence.
+    RandomNet <- rewire(
+      actors,
+      keeping_degseq(
+        niter = gsize(actors) * 10
+      )
+    )
+
+    # Calculate global transitivity for the current randomized network.
+    transitivity(
+      RandomNet,
+      type = "global"
+    )
+  }
+)
+
+# Calculate the mean transitivity of the randomized networks.
+mean_random_transitivity <- mean(
+  random_transitivities,
+  na.rm = TRUE
+)
+
+# Calculate the ratio of empirical transitivity to random mean transitivity.
+transitivity_ratio <- empirical_transitivity /
+  mean_random_transitivity
+
+# Create a table comparing empirical and randomized transitivity.
+community_check <- data.frame(
+  Metric = c(
+    "Hollywood network transitivity",
+    "Random-network mean",
+    "Transitivity ratio"
+  ),
+  Value = c(
+    empirical_transitivity,
+    mean_random_transitivity,
+    transitivity_ratio
+  )
+)
+
+# Display the empirical-versus-random comparison table.
+community_check
+
+# Calculate the standard deviation of the random transitivity values.
+null_sd <- sd(
+  random_transitivities,
+  na.rm = TRUE
+)
+
+# Calculate the empirical network's z-score relative to the random networks.
+z_score <- (
+  empirical_transitivity -
+    mean_random_transitivity
+) / null_sd
+
+# Count random networks with transitivity at least as large as the empirical value.
+count_exceeding <- sum(
+  random_transitivities >= empirical_transitivity,
+  na.rm = TRUE
+)
+
+# Calculate the simulation-based p-value.
+p_value <- count_exceeding / replicates
+
+# Create a table containing all community-possibility computations.
+community_test <- data.frame(
+  Empirical_transitivity = empirical_transitivity,
+  Random_mean = mean_random_transitivity,
+  Ratio = transitivity_ratio,
+  Z_score = z_score,
+  P_value = p_value
+)
+
+# Round the numerical results to four decimal places.
+community_test <- round(
+  community_test,
+  4
+)
+
+# Display the complete community-possibility test table.
+community_test
+```
+
+```{r, Question 6}
+# Create a vector of equal edge weights so the algorithms use network structure only.
+unweightedEdges <- rep(
+  1,
+  ecount(actors)
+)
+
+# Reset the seed so the Louvain result can be reproduced.
+set.seed(1111)
+
+# Detect communities using the Louvain algorithm.
+louvain_result <- cluster_louvain(
+  actors,
+  weights = unweightedEdges
+)
+
+# Detect communities using the Girvan-Newman edge-betweenness algorithm.
+girvan_result <- cluster_edge_betweenness(
+  actors,
+  weights = unweightedEdges,
+  directed = FALSE
+)
+
+# Calculate the modularity of the Louvain community partition.
+louvain_modularity <- modularity(
+  actors,
+  membership(louvain_result),
+  weights = unweightedEdges
+)
+
+# Calculate the modularity of the Girvan-Newman community partition.
+girvan_modularity <- modularity(
+  actors,
+  membership(girvan_result),
+  weights = unweightedEdges
+)
+
+# Create a summary table comparing both community-detection algorithms.
+community_summary <- data.frame(
+  Algorithm = c(
+    "Louvain",
+    "Girvan-Newman"
+  ),
+  Number_of_communities = c(
+    length(louvain_result),
+    length(girvan_result)
+  ),
+  Modularity = c(
+    louvain_modularity,
+    girvan_modularity
+  ),
+  Community_sizes = c(
+    paste(
+      sort(
+        sizes(louvain_result),
+        decreasing = TRUE
+      ),
+      collapse = ", "
+    ),
+    paste(
+      sort(
+        sizes(girvan_result),
+        decreasing = TRUE
+      ),
+      collapse = ", "
+    )
+  )
+)
+
+# Arrange the algorithms from highest to lowest modularity.
+community_summary <- community_summary[
+  order(-community_summary$Modularity),
+]
+
+# Remove the old row numbers from the sorted summary table.
+row.names(community_summary) <- NULL
+
+# Display the comparison of the two community-detection algorithms.
+community_summary
+
+# Test whether Louvain has modularity at least as large as Girvan-Newman.
+if (louvain_modularity >= girvan_modularity) {
+  # Save the Louvain partition as the best result.
+  best_result <- louvain_result
+
+  # Save the name of the selected algorithm.
+  best_algorithm <- "Louvain"
+
+  # Save the modularity of the selected algorithm.
+  best_modularity <- louvain_modularity
+} else {
+  # Save the Girvan-Newman partition as the best result.
+  best_result <- girvan_result
+
+  # Save the name of the selected algorithm.
+  best_algorithm <- "Girvan-Newman"
+
+  # Save the modularity of the selected algorithm.
+  best_modularity <- girvan_modularity
+}
+
+# Display the name of the selected community-detection algorithm.
+best_algorithm
+
+# Display the modularity of the selected community partition.
+best_modularity
+
+# Extract the community membership assigned to every actor.
+best_membership <- membership(best_result)
+
+# Add the selected community membership as a node attribute.
+actors <- set_vertex_attr(
+  actors,
+  name = "community",
+  index = names(best_membership),
+  value = as.numeric(best_membership)
+)
+
+# Display each actor and the community assigned to that actor.
+data.frame(
+  Actor = V(actors)$name,
+  Community = V(actors)$community
+)
+
+# Reset the seed so the community graph layout can be reproduced.
+set.seed(1111)
+
+# Create a graph displaying only the best community-detection result.
+communityGraph <- ggraph(graph = actors) +
+  # Draw all network edges using movie count as edge width.
+  geom_edge_link(
+    aes(edge_width = as.ordered(weight)),
+    color = "grey75",
+    alpha = 0.7
+  ) +
+  # Color each actor according to the selected community assignment.
+  geom_node_point(
+    aes(color = as.factor(community)),
+    size = 5
+  ) +
+  # Display the name of every actor.
+  geom_node_text(
+    aes(label = name),
+    repel = TRUE,
+    size = 4
+  ) +
+  # Apply the network-focused graph theme.
+  theme_graph() +
+  # Add the selected algorithm's name to the graph title and label the legends.
+  labs(
+    title = paste(
+      best_algorithm,
+      "community solution"
+    ),
+    color = "Community",
+    edge_width = "Movies in common"
+  )
+
+# Display the graph for the community solution with the highest modularity.
+communityGraph
+```
+**Comment:** Louvain identified 3 communities with a modularity of
+
+0.380102. Girvan-Newman identified 3 communities with a
+
+modularity of 0.375000 The Louvain solution was plotted because it
+
+produced the higher modularity value.
