@@ -1650,14 +1650,14 @@ library(igraph)</code></pre>
 actors=read_graph(dataGitLink,format=&#39;graphml&#39;)</code></pre>
 <p>As you see, you have:</p>
 <pre class="r"><code>summary(actors)</code></pre>
-<pre><code>## IGRAPH 61fdd44 UNW- 11 14 -- 
+<pre><code>## IGRAPH 0f3a861 UNW- 11 14 -- 
 ## + attr: wonOscar (v/n), color (v/c), name (v/c), id (v/c), weight (e/n)</code></pre>
 <p>From above:</p>
 <ul>
 <li>The graph “actors” is an undirected network of actors.</li>
 </ul>
 <pre class="r"><code>V(actors)</code></pre>
-<pre><code>## + 11/11 vertices, named, from 61fdd44:
+<pre><code>## + 11/11 vertices, named, from 0f3a861:
 ##  [1] Robin Williams    Tom Hardy         Dustin Hoffman    Leonardo DiCaprio
 ##  [5] Tom Hanks         Al Pacino         Morgan Freeman    Robert De Niro   
 ##  [9] Matt Damon        Jack Nicholson    Christian Bale</code></pre>
@@ -1674,7 +1674,7 @@ oscar in acting.</li>
 acted in the same film.</li>
 </ul>
 <pre class="r"><code>E(actors)</code></pre>
-<pre><code>## + 14/14 edges from 61fdd44 (vertex names):
+<pre><code>## + 14/14 edges from 0f3a861 (vertex names):
 ##  [1] Robin Williams   --Al Pacino         Robin Williams   --Matt Damon       
 ##  [3] Robin Williams   --Robert De Niro    Tom Hardy        --Christian Bale   
 ##  [5] Tom Hardy        --Leonardo DiCaprio Dustin Hoffman   --Tom Hanks        
@@ -1811,17 +1811,17 @@ actors &lt;- read_graph(dataGitLink, format = &quot;graphml&quot;)
 
 # Display a summary of the Hollywood actor network.
 summary(actors)</code></pre>
-<pre><code>## IGRAPH 0e925c0 UNW- 11 14 -- 
+<pre><code>## IGRAPH 48986fe UNW- 11 14 -- 
 ## + attr: wonOscar (v/n), color (v/c), name (v/c), id (v/c), weight (e/n)</code></pre>
 <pre class="r"><code># Display the actors represented by the network nodes.
 V(actors)</code></pre>
-<pre><code>## + 11/11 vertices, named, from 0e925c0:
+<pre><code>## + 11/11 vertices, named, from 48986fe:
 ##  [1] Robin Williams    Tom Hardy         Dustin Hoffman    Leonardo DiCaprio
 ##  [5] Tom Hanks         Al Pacino         Morgan Freeman    Robert De Niro   
 ##  [9] Matt Damon        Jack Nicholson    Christian Bale</code></pre>
 <pre class="r"><code># Display the connections represented by the network edges.
 E(actors)</code></pre>
-<pre><code>## + 14/14 edges from 0e925c0 (vertex names):
+<pre><code>## + 14/14 edges from 48986fe (vertex names):
 ##  [1] Robin Williams   --Al Pacino         Robin Williams   --Matt Damon       
 ##  [3] Robin Williams   --Robert De Niro    Tom Hardy        --Christian Bale   
 ##  [5] Tom Hardy        --Leonardo DiCaprio Dustin Hoffman   --Tom Hanks        
